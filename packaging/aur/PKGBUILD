@@ -1,6 +1,6 @@
 # Maintainer: Jochem Kuipers <jochem@kuipers.cc>
 pkgname=oled-care
-pkgver=2026.11.24
+pkgver=2026.11.24.1
 pkgrel=1
 pkgdesc='HDMI-safe OLED blanker for KDE/Wayland — black screens without killing your AVR'
 arch=('any')

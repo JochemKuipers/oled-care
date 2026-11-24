@@ -105,6 +105,13 @@ class Blanker(QObject):
         self._shift_timer = QTimer(self)
         self._shift_timer.setInterval(60_000)
         self._shift_timer.timeout.connect(self._nudge)
+        # Ignore input briefly after show so the tray click / enter event
+        # that triggered blanking does not immediately dismiss it.
+        self._input_armed = False
+        self._arm_timer = QTimer(self)
+        self._arm_timer.setSingleShot(True)
+        self._arm_timer.setInterval(750)
+        self._arm_timer.timeout.connect(self._arm_input)
 
         app = QGuiApplication.instance()
         if app is not None:
@@ -132,27 +139,38 @@ class Blanker(QObject):
         if self._active:
             return
         self._active = True
+        self._input_armed = False
         self._shift_index = 0
         self._rebuild_windows()
         if self._pixel_shift:
             self._shift_timer.start()
         QGuiApplication.setOverrideCursor(QCursor(Qt.CursorShape.BlankCursor))
+        self._arm_timer.start()
 
     def hide(self) -> None:
         """Dismiss blanker windows and restore the cursor."""
         if not self._active:
             return
         self._active = False
+        self._input_armed = False
+        self._arm_timer.stop()
         self._shift_timer.stop()
         self._clear_windows()
         QGuiApplication.restoreOverrideCursor()
         self.dismissed.emit()
 
+    def _arm_input(self) -> None:
+        self._input_armed = True
+
+    def _on_activity(self) -> None:
+        if self._input_armed:
+            self.hide()
+
     def _rebuild_windows(self) -> None:
         self._clear_windows()
         for screen in QGuiApplication.screens():
             win = BlankWindow(screen)
-            win.activity.connect(self.hide)
+            win.activity.connect(self._on_activity)
             win.showFullScreen()
             win.raise_()
             win.activateWindow()
@@ -160,7 +178,7 @@ class Blanker(QObject):
 
     def _clear_windows(self) -> None:
         for win in self._windows:
-            win.activity.disconnect(self.hide)
+            win.activity.disconnect(self._on_activity)
             win.hide()
             win.deleteLater()
         self._windows.clear()
