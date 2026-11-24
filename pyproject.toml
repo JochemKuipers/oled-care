@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=84.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oled-care"
+version = "2026.11.24"
+description = "HDMI-safe OLED blanker for KDE/Wayland — black screens without killing your AVR"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "Jochem Kuipers" }]
+dependencies = [
+  "PySide6>=6.12.0",
+  "pywayland>=0.4.19",
+]
+
+[project.optional-dependencies]
+dev = ["ruff>=0.17.6"]
+
+[project.scripts]
+oled-care = "oled_care.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["oled_care*"]
+
+[tool.setuptools.package-data]
+oled_care = ["resources/*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["oled_care"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  # Incompatible pairs / formatter conflicts (required with select=ALL + ruff format)
+  "D203",
+  "D213",
+  "COM812",
+  "ISC001",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

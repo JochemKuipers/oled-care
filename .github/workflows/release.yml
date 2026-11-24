@@ -1,0 +1,110 @@
+# Cut a release by pushing a CalVer tag: git tag v2026.11.24 && git push origin v2026.11.24
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "CalVer tag to build (e.g. v2026.11.24)"
+        required: true
+        default: "v2026.11.24"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Set version
+        id: ver
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          TAG="${TAG#refs/tags/}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+
+      - name: Ruff format
+        uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89 # v4.1.0
+        with:
+          version: "0.17.6"
+          args: "format --check"
+          src: oled_care
+
+      - name: Ruff lint
+        uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89 # v4.1.0
+        with:
+          version: "0.17.6"
+          args: "check"
+          src: oled_care
+
+      - name: Sync pyproject version
+        run: |
+          VER="${{ steps.ver.outputs.version }}"
+          sed -i "s/^version = \".*\"/version = \"${VER}\"/" pyproject.toml
+          grep -q "version = \"${VER}\"" pyproject.toml
+
+      - name: Install build
+        run: pip install "build==1.6.1"
+
+      - name: Build wheel and sdist
+        run: |
+          python -m build
+          mkdir -p dist
+          ls -la dist
+
+      - name: Source tarball for AUR
+        run: |
+          VER="${{ steps.ver.outputs.version }}"
+          git archive --format=tar.gz --prefix="oled-care-${VER}/" \
+            -o "dist/oled-care-${VER}.tar.gz" HEAD
+          sha256sum "dist/oled-care-${VER}.tar.gz" | tee dist/SHA256SUMS
+
+      - name: Create / update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          VER="${{ steps.ver.outputs.version }}"
+          NOTES="$(cat <<EOF
+          ## OLED Care ${VER}
+
+          HDMI-safe OLED blanker for KDE/Wayland.
+
+          ### Install (AUR)
+          \`\`\`sh
+          yay -S oled-care
+          # or
+          paru -S oled-care
+          \`\`\`
+
+          ### Local package from this release
+          \`\`\`sh
+          # after cloning / checking out ${TAG}
+          ./packaging/aur/build-local.sh
+          sudo pacman -U packaging/aur/oled-care-*.pkg.tar.zst
+          \`\`\`
+
+          ### Run from source
+          \`\`\`sh
+          pip install .
+          oled-care
+          \`\`\`
+          EOF
+          )"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --title "v${VER}" --notes "$NOTES"
+          fi

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=OLED Care
+GenericName=OLED burn-in protection
+Comment=Blank OLED screens to true black while keeping HDMI audio alive
+Exec=oled-care
+Icon=oled-care
+Terminal=false
+Categories=Utility;System;
+Keywords=OLED;burn-in;screensaver;HDMI;AVR;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+X-KDE-autostart-after=panel
