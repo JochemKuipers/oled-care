@@ -19,9 +19,9 @@ log = logging.getLogger(__name__)
 class WaylandIdleMonitor(QObject):
     """Watch seat idle via ext-idle-notify-v1 (works on KWin Wayland).
 
-    Uses get_input_idle_notification so our own ScreenSaver.Inhibit (and
-    media idle-inhibitors) do not prevent blanking. PolicyAgent screen
-    inhibits are still honored by the app before blanking.
+    Uses get_input_idle_notification so our own ScreenSaver.Inhibit does not
+    block the timer. Foreign PowerDevil ``idle`` inhibits (e.g. Firefox
+    “Playing video”) are checked separately before blanking.
     """
 
     idled = Signal()

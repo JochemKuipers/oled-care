@@ -108,7 +108,7 @@ class OledCareApp:
     def _tooltip(self) -> str:
         state = "on" if self.config.enabled else "off"
         blanked = " · blanked" if self.blanker.active else ""
-        inhibit = " · screen inhibit" if self.power.screen_inhibited else ""
+        inhibit = " · video inhibit" if self.power.screen_inhibited else ""
         return f"OLED Care ({state}) · idle {self._format_timeout()}{blanked}{inhibit}"
 
     def _refresh_tray(self) -> None:
@@ -180,7 +180,7 @@ class OledCareApp:
         if not self.config.enabled:
             return
         if self.power.screen_inhibited:
-            log.info("idle reached but screen inhibit active — skip blank")
+            log.info("idle reached but foreign idle inhibit active — skip blank")
             return
         if self.blanker.active:
             return
