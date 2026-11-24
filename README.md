@@ -78,7 +78,7 @@ ruff format oled_care
 ruff check oled_care
 ```
 
-CI runs the same Ruff gates on every push/PR. Versioning is **CalVer** (`YYYY.MM.DD`). Pushing a `vYYYY.MM.DD` tag runs the Release workflow (Ruff + wheel/sdist + GitHub Release assets).
+CI runs the same Ruff gates on every push/PR. Versioning is **CalVer** (`YYYY.MM.DD`). Pushing a `vYYYY.MM.DD` tag runs the Release workflow (Ruff + wheel/sdist + GitHub Release + AUR `oled-care` update).
 
 ## License
 
